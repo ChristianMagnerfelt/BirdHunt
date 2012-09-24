@@ -6,17 +6,27 @@
 
 Matrix::Matrix(std::size_t row, std::size_t col) : data(std::vector<std::vector<float>>(row, std::vector<float>(col,0.0f))){}
 
+Matrix::Matrix(std::initializer_list<std::vector<float>> values) : data(values){}
+
 Matrix Matrix::operator *(const Matrix & other)
 {
 	if(col() != other.row())
 		throw;
 	Matrix result(row(), other.col());
-
-
+	for(std::size_t i = 0; i < row(); ++i)
+	{
+		for(std::size_t j = 0; j < col(); ++j)
+		{
+			for(std::size_t inner = 0; inner < col(); ++inner)
+			{
+				result.data[i][j] += data[i][inner] * other.data[inner][j];  
+			}
+		}	 
+	}
 	return result;
 }
 
-const std::vector<float> & Matrix::operator[](std::size_t rowId) const
+std::vector<float> & Matrix::operator[](std::size_t rowId)
 {
 	if(rowId >= data.size())
 		throw;
