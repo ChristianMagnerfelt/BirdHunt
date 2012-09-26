@@ -33,6 +33,13 @@ std::vector<float> & Matrix::operator[](std::size_t rowId)
 	return data[rowId];
 }
 
+const std::vector<float> & Matrix::operator[](std::size_t rowId) const
+{
+	if(rowId >= data.size())
+		throw;
+	return data[rowId];
+}
+
 void Matrix::print() const
 {
 	std::for_each(data.begin(), data.end(), [](const std::vector<float> & row)
