@@ -48,9 +48,9 @@ namespace ducks
 		std::cout << "HIT DUCK!!!" << std::endl;
 	}
 	
-	Matrix CPlayer::forward(const Matrix & states, const Matrix & initState, const Matrix & obs, std::size_t obsCol, const CDuck & duck)
+	Matrix CPlayer::forward(const Matrix & states, const Matrix & initState, const Matrix & obsMatrix, std::size_t obsCol, const CDuck & duck)
 	{
-		if(initState.col() != obs.row())
+		if(initState.col() != obsMatrix.row())
 			throw;
 			
 		// Compute alpha 0
@@ -58,7 +58,7 @@ namespace ducks
 		float c0 = 0.0f;
 		for(std::size_t i = 0; i < initState.col(); ++i)
 		{
-			alpha[0][i] = initState[0][i] * obs[i][obsCol];
+			alpha[0][i] = initState[0][i] * obsMatrix[i][obsCol];
 			c0 += alpha[0][i];
 		}
 		
@@ -74,6 +74,7 @@ namespace ducks
 		Matrix prevT = alpha;
 		for(std::size_t t = 0; t < duck.GetSeqLength(); ++t)
 		{
+			int cT = 0;
 			Matrix alphaT(1, alpha.col());
 			
 			for(std::size_t i = 0; i < states.row(); ++i)
@@ -82,19 +83,30 @@ namespace ducks
 				{
 					alphaT[0][i] = alphaT[0][i] + prevT[0][j] * states[j][i];
 				}
-				//alphaT[0][i] = alphaT[0][i] * obsMatrix[
+				alphaT[0][i] = alphaT[0][i] * obsMatrix[i][getObservedState(duck, t)];
+				cT += alphaT[0][i];
 			}
 			
-			
+			cT = 1/cT;
+			for(std::size_t i = 0; i < states.row(); ++i)
+			{
+				alphaT[0][i] = cT * alphaT[0][i];
+			} 
 			// Scale alpha t
 			prevT = alphaT;
 		}
 
 		return prevT;
 	}
+
+	std::size_t CPlayer::getObservedState(const CDuck & duck, std::size_t t) const
+	{
+		return 0;	
+	}
 	
 	Matrix CPlayer::backward()
 	{
 
 	}
+	
 /*namespace ducks*/ }

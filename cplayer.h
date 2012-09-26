@@ -51,6 +51,7 @@ class CPlayer
 		void Hit(int pDuck,ESpecies pSpecies);	
     private:
     	Matrix forward(const Matrix & states, const Matrix & initState, const Matrix & obs, std::size_t obsCol, const CDuck & duck);
+    	std::size_t getObservedState(const CDuck & duck, std::size_t t) const; 
     	Matrix backward();
 };
 
