@@ -1,7 +1,7 @@
 all: main.o
 	g++ -o main *.o -std=c++0x
 
-main.o:
+main.o: *.h *.cc
 	g++ -c *.cc -std=c++0x	
 
 clean:

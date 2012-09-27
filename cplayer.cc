@@ -48,17 +48,17 @@ namespace ducks
 		std::cout << "HIT DUCK!!!" << std::endl;
 	}
 	
-	Matrix CPlayer::forward(const Matrix & states, const Matrix & initState, const Matrix & obsMatrix, std::size_t obsCol, const CDuck & duck)
+	Matrix CPlayer::forward(const Matrix & states, const Matrix & initState, const Matrix & obsMatrix, const CDuck & duck, int & cT)
 	{
 		if(initState.col() != obsMatrix.row())
 			throw;
 			
 		// Compute alpha 0
 		Matrix alpha(1, initState.col());
-		float c0 = 0.0f;
+		int c0 = 0.0f;
 		for(std::size_t i = 0; i < initState.col(); ++i)
 		{
-			alpha[0][i] = initState[0][i] * obsMatrix[i][obsCol];
+			alpha[0][i] = initState[0][i] * obsMatrix[i][getObservedState(duck, 0)];
 			c0 += alpha[0][i];
 		}
 		
@@ -72,9 +72,9 @@ namespace ducks
 		// Compute alpha t
 		Matrix result;		
 		Matrix prevT = alpha;
-		for(std::size_t t = 0; t < duck.GetSeqLength(); ++t)
+		for(std::size_t t = 1; t < duck.GetSeqLength(); ++t)
 		{
-			int cT = 0;
+			cT = 0;
 			Matrix alphaT(1, alpha.col());
 			
 			for(std::size_t i = 0; i < states.row(); ++i)
@@ -104,9 +104,46 @@ namespace ducks
 		return 0;	
 	}
 	
-	Matrix CPlayer::backward()
+	Matrix CPlayer::backward(const Matrix & states, const Matrix & obs, const CDuck & duck, int & cT)
 	{
+			Matrix betaT(1, states.row());
+			for(std::size_t i = 0; i < states.row(); ++i)
+			{	
+				betaT[0][i] = cT;
+			}
+			
+			Matrix betaNext(1, states.row());
+			int prevT = duck.GetSeqLength() - 1;
+			for(int t = prevT - 1; t >= 0; --t)
+			{
+				for(std::size_t i = 0; i < states.row(); ++i)
+				{
+					betaNext[0][i] = 0;
+					for(std::size_t j = 0; j < states.row(); ++j)
+					{
+						betaNext[0][i] = betaNext[0][i] + states[j][i] * obs[j][getObservedState(duck, prevT)] * betaT[0][j]; 
+					}
+					// Scale beta with cT
+					betaNext[0][i] = cT * betaNext[0][i]; 					
+				}
 
+				betaT = betaNext;
+				prevT = t;
+			}
+			return betaT;
 	}
-	
+	void CPlayer::calculateYAndDiGamma(const Matrix & alpha, const Matrix & beta, const Matrix & states, const Matrix & obs, const CDuck & duck, Matrix & y, Matrix & diGamma, int & denom)
+	{
+		for(std::size_t t = 0; t < duck.GetSeqLength() - 1; ++t)
+		{
+			denom = 0;
+			for(std::size_t i = 0; i < states.row(); ++i)
+			{
+				for(std::size_t j = 0; j < states.row(); ++j)
+				{
+					denom = denom + alpha[0][i] * states[j][i] * obs[j][getObservedState(duck, t)];
+				}
+			}
+		}
+	}	
 /*namespace ducks*/ }
