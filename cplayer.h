@@ -48,12 +48,7 @@ class CPlayer
 		 *	\param	pSpecies the species of the duck 
 		 *			(it will also be set for this duck in pState from now on)
 		 */
-		void Hit(int pDuck,ESpecies pSpecies);	
-    private:
-    	Matrix forward(const Matrix & states, const Matrix & initState, const Matrix & obs, const CDuck & duck, int & ct);
-    	std::size_t getObservedState(const CDuck & duck, std::size_t t) const;
-    	Matrix backward(const Matrix & states, const Matrix & obs, const CDuck & duck, int & ct);
-    	void calculateYAndDiGamma(const Matrix & alpha, const Matrix & beta, const Matrix & states, const Matrix & obs, const CDuck & duck,  Matrix & y, Matrix & diGamma, int & denom);
+		void Hit(int pDuck,ESpecies pSpecies);
 };
 
 /*namespace ducks*/ }
