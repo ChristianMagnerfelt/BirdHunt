@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <iostream>
 #include "matrix.h"
+#include "prediction.h"
 
 namespace ducks
 {
@@ -16,11 +17,25 @@ namespace ducks
 		 * Here you should write your clever algorithms to get the best action.
 		 * This skeleton never shoots.
 		 */
-		Matrix stateM = {{0.24,0.26,0.24,0.26},{0.24,0.26,0.24,0.26},{0.24,0.26,0.24,0.26}};
-		stateM.print();
-	
-	
-	
+		Matrix initM = {{0.24,0.26,0.24,0.26}};
+		initM.print();
+		std::cout << std::endl;
+		Matrix statesM = {{0.24,0.26,0.24,0.26},{0.24,0.26,0.24,0.26},{0.24,0.26,0.24,0.26},{0.24,0.26,0.24,0.26}};
+		statesM.print();
+		std::cout << std::endl;
+		Matrix obsM = {	{0.24,0.26,0.24,0.26,0.24,0.26,0.24,0.26,0.24,0.26,0.24,0.26,0.25,0.25},
+						{0.24,0.26,0.24,0.26,0.24,0.26,0.24,0.26,0.24,0.26,0.24,0.26,0.25,0.25},
+						{0.24,0.26,0.24,0.26,0.24,0.26,0.24,0.26,0.24,0.26,0.24,0.26,0.25,0.25},
+						{0.24,0.26,0.24,0.26,0.24,0.26,0.24,0.26,0.24,0.26,0.24,0.26,0.25,0.25}};
+		obsM.print();
+		std::cout << std::endl;
+			
+		for(int i = 0; i < pState.GetNumDucks(); ++i)
+		{
+			std::cout << "Predicting for duck " << i << std::endl;
+			Prediction p(pState.GetDuck(i), initM, statesM, obsM);
+			p.calculate();
+		}
 	
 		//this line doesn't shoot any bird
 		return cDontShoot;
