@@ -5,43 +5,19 @@
 #include "cduck.h"
 
 #include<vector>
+#include<map>
 
 class Prediction
 {
 	public:
-		enum Observation
-		{
-			StableEast,
-			StableWest,
-			SlowUpEast,
-			SlowUpWest,
-			SlowDownEast,
-			SlowDownWest,
-			FastUpEast,
-			FastUpWest,
-			FastDownEast,
-			FastDownWest,
-			FallEast,
-			FallWest,
-			Stopped,
-			Other,
-		};
-			
-		struct CombinedAction{
-			CombinedAction(ducks::EAction vAction, ducks::EAction hAction, ducks::EMovement movement, Observation observation) :
-				vA(vAction), hA(hAction), m(movement), obs(observation){}
-			bool isObservation(ducks::EAction vAction, ducks::EAction hAction, ducks::EMovement movement);
-			ducks::EAction vA;
-			ducks::EAction hA;
-			ducks::EMovement m;
-			Observation obs;
-		};
-			
 		Prediction(const ducks::CDuck & refDuck, const Matrix & initStates, const Matrix & states, const Matrix & obsStates);
 		void calculate();
 		void print() const;
 		void printDuckSequence() const;
 	private:
+		static std::map<std::pair<ducks::EAction, ducks::EAction>, std::size_t> observation;
+		
+		// HMM functions
 		std::size_t getObservedState(std::size_t t);
 		void calculateAlpha();
 		void calculateBeta();
@@ -51,7 +27,6 @@ class Prediction
 		
 		// Bird variables
 		const ducks::CDuck & duck;
-		static std::vector<CombinedAction> combAction;
 			
 		// HMM variables
 		std::vector<float> c;

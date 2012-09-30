@@ -42,11 +42,12 @@ const std::vector<float> & Matrix::operator[](std::size_t rowId) const
 
 void Matrix::print() const
 {
+	std::cout.precision( 2 );
 	std::for_each(data.begin(), data.end(), [](const std::vector<float> & row)
 	{
 		std::for_each(row.begin(), row.end(),[](const float & value)
 		{
-			std::cout << value;
+			std::cout << value << ' ';
 		});
 		std::cout << std::endl;
 	});
