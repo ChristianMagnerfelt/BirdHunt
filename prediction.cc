@@ -10,7 +10,7 @@ std::vector<Prediction::CombinedAction> Prediction::combAction = std::vector<Pre
 
 Prediction::Prediction(const ducks::CDuck & refDuck, const Matrix & initStates, const Matrix & states, const Matrix & obsStates) : 
 	c(std::vector<float>(duck.GetSeqLength(), 0.0f)), 
-	denom(0.0f), numer(0.0f), logProb(0.0f), oldLogProb(std::numeric_limits<float>::min()), maxIter(5),
+	denom(0.0f), numer(0.0f), logProb(0.0f), oldLogProb(std::numeric_limits<float>::min()), maxIter(1),
 	duck(refDuck), init(initStates), a(states), b(obsStates), 
 	alpha(std::vector<Matrix>(duck.GetSeqLength(), Matrix(1, a.col()))),
 	beta(std::vector<Matrix>(duck.GetSeqLength(), Matrix(1, a.col()))),
@@ -55,6 +55,7 @@ void Prediction::calculate()
 }
 void Prediction::print() const
 {
+	printDuckSequence();
 	std::cout << "Init :" << std::endl;
 	init.print();
 	std::cout << "A :" << std::endl;
@@ -140,7 +141,7 @@ void Prediction::calculateBeta()
 }
 void Prediction::calculateYAndDiGamma()
 {
-	for(std::size_t t = 0; t < duck.GetSeqLength() - 2; ++t)
+	for(std::size_t t = 0; t < (duck.GetSeqLength() - 1); ++t)
 	{
 		// Calculate denom
 		denom = 0.0f;
@@ -180,7 +181,7 @@ void Prediction::reEstimate()
 		{	
 			numer = 0.0f;
 			denom = 0.0f;
-			for(std::size_t t = 0; t < duck.GetSeqLength() - 2; ++t)
+			for(std::size_t t = 0; t < duck.GetSeqLength() - 1; ++t)
 			{
 				numer = numer + diGamma[t][j][i];
 				denom = denom + gamma[t][0][i];
@@ -196,7 +197,7 @@ void Prediction::reEstimate()
 		{
 			numer = 0.0f;
 			denom = 0.0f;
-			for(std::size_t t = 0; t < duck.GetSeqLength() - 2; ++t)
+			for(std::size_t t = 0; t < duck.GetSeqLength() - 1; ++t)
 			{
 				if(getObservedState(t) == j)
 					numer = numer + gamma[t][0][i];
@@ -223,12 +224,20 @@ std::size_t Prediction::getObservedState(std::size_t t)
 	for(std::size_t i = 0; i < combAction.size(); ++i)
 	{
 		if(combAction[i].isObservation(action.GetVAction(), action.GetHAction(), action.GetMovement()))
+		{
 			return (std::size_t)combAction[i].obs;
+		}
 	}
 	return (std::size_t)(Other);
 }
 
-
+void Prediction::printDuckSequence() const
+{
+	for(int i = 0; i < duck.GetSeqLength(); ++i)
+	{
+		std::cout << "Seq : " << i << " V : " << duck.GetAction(i).GetVAction() << " H : " << duck.GetAction(i).GetHAction() << " M : " << duck.GetAction(i).GetMovement() << std::endl;
+	}
+}
 bool Prediction::CombinedAction::isObservation(ducks::EAction vAction, ducks::EAction hAction, ducks::EMovement movement)
 {
 	if(vA == vAction && hA == hAction && m == movement)

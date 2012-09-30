@@ -40,6 +40,7 @@ class Prediction
 		Prediction(const ducks::CDuck & refDuck, const Matrix & initStates, const Matrix & states, const Matrix & obsStates);
 		void calculate();
 		void print() const;
+		void printDuckSequence() const;
 	private:
 		std::size_t getObservedState(std::size_t t);
 		void calculateAlpha();
