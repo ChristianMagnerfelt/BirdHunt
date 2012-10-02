@@ -14,6 +14,8 @@ class Prediction
 		void calculate();
 		void print() const;
 		void printDuckSequence() const;
+		std::size_t getNextV() const { return nextV;}
+		std::size_t getNextH() const { return nextH;}
 	private:
 		static std::map<std::pair<ducks::EAction, ducks::EAction>, std::size_t> observation;
 		
@@ -24,11 +26,16 @@ class Prediction
 		void calculateYAndDiGamma();
 		void calculateLogProb();
 		void reEstimate();
+		void makePrediction();
 		
 		// Bird variables
 		const ducks::CDuck & duck;
 			
 		// HMM variables
+		std::size_t nextV;
+		std::size_t nextH;
+		std::size_t nextState;
+		std::size_t nextObservation;
 		std::vector<float> c;
 		float denom;
 		float numer;

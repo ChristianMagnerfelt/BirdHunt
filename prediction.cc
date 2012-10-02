@@ -10,9 +10,20 @@
 std::map<std::pair<ducks::EAction, ducks::EAction>, std::size_t> Prediction::observation = std::map<std::pair<ducks::EAction, ducks::EAction>, std::size_t>();
 
 Prediction::Prediction(const ducks::CDuck & refDuck, const Matrix & initStates, const Matrix & states, const Matrix & obsStates) : 
+	nextState(0), 
+	nextObservation(0), 
+	nextV(0), 
+	nextH(0), 
 	c(std::vector<float>(duck.GetSeqLength(), 0.0f)), 
-	denom(0.0f), numer(0.0f), logProb(0.0f), oldLogProb(-6000.0f), maxIter(10),
-	duck(refDuck), init(initStates), a(states), b(obsStates), 
+	denom(0.0f), 
+	numer(0.0f), 
+	logProb(0.0f), 
+	oldLogProb(-100000.0f), 
+	maxIter(30),
+	duck(refDuck), 
+	init(initStates), 
+	a(states), 
+	b(obsStates), 
 	alpha(std::vector<Matrix>(duck.GetSeqLength(), Matrix(1, a.col()))),
 	beta(std::vector<Matrix>(duck.GetSeqLength(), Matrix(1, a.col()))),
 	diGamma(std::vector<Matrix>(duck.GetSeqLength(), Matrix(a.row(), a.col()))), 
@@ -55,6 +66,7 @@ void Prediction::calculate()
 			break;
 		}
 	}
+	makePrediction();
 }
 void Prediction::print() const
 {
@@ -68,7 +80,9 @@ void Prediction::print() const
 	std::cout.precision(8);
 	std::cout << "Log prob : " << logProb << std::endl;
 	std::cout << "Old log prob : " << oldLogProb << std::endl;
+	std::cout << "Alpha T - 1" << std::endl;
 }
+
 void Prediction::calculateAlpha()
 {
 	if(a.col() != a.row() || a.col() != init.col() || init.row() != 1 || a.col() != b.row())
@@ -76,23 +90,18 @@ void Prediction::calculateAlpha()
 	
 	// Compute alpha 0
 	c[0] = 0.0f;
-	//std::cout << "Compute alpha 0" << std::endl;
 	for(std::size_t i = 0; i < a.col(); ++i)
 	{
-		alpha[0][0][i] = init[0][i] * b[i][getObservedState(0)];	
+		alpha[0][0][i] = init[0][i] * b[i][getObservedState(0)];
 		c[0] = c[0] + alpha[0][0][i];
 	}
 	
-	// Scale alpha 0
-	//std::cout << "Scale alpha 0" << std::endl;
 	c[0] = 1.0f/c[0];
 	for(std::size_t i = 0; i < a.col(); ++i)
 	{
 		alpha[0][0][i] = c[0] * alpha[0][0][i];
 	}
 
-	// Compute alpha t
-	//std::cout << "Compute alpha t" << std::endl;
 	for(std::size_t t = 1; t < duck.GetSeqLength(); ++t)
 	{
 		c[t] = 0.0f;
@@ -114,19 +123,18 @@ void Prediction::calculateAlpha()
 			alpha[t][0][i] = c[t] * alpha[t][0][i];
 		}
 	}
-	//std::cout << "Completed alpha" << std::endl;
+
 }
 void Prediction::calculateBeta()
 {
 	// Calculate beta t - 1
-	//std::cout << "Calculate beta t - 1" << std::endl;
 	for(std::size_t i = 0; i < a.col(); ++i)
 	{	
 		beta[duck.GetSeqLength() - 1][0][i] = c[duck.GetSeqLength() - 1];
 	}
 
+	
 	// Calculate beta t - 2 to 0
-	//std::cout << "Calculate beta t - 2 to 0" << std::endl;
 	for(int t = (duck.GetSeqLength() - 2); t >= 0; --t)
 	{	
 		for(std::size_t i = 0; i < a.col(); ++i)
@@ -140,7 +148,7 @@ void Prediction::calculateBeta()
 			beta[t][0][i] = c[t] * beta[t][0][i];				
 		}
 	}
-	//std::cout << "Beta complete" << std::endl;
+
 }
 void Prediction::calculateYAndDiGamma()
 {
@@ -161,12 +169,11 @@ void Prediction::calculateYAndDiGamma()
 			gamma[t][0][i] = 0;
 			for(std::size_t j = 0; j < a.row(); ++j)
 			{
-				diGamma[t][j][i] = (alpha[t][0][i] * a[i][j] * b[j][getObservedState(t + 1)] * beta[t + 1][0][j]) / denom;
-				gamma[t][0][i] = gamma[t][0][i] + diGamma[t][j][i];
+				diGamma[t][i][j] = (alpha[t][0][i] * a[i][j] * b[j][getObservedState(t + 1)] * beta[t + 1][0][j]) / denom;
+				gamma[t][0][i] = gamma[t][0][i] + diGamma[t][i][j];
 			}
 		}
 	}
-	//std::cout << "Y and DiGamma complete" << std::endl;
 }
 void Prediction::reEstimate()
 {
@@ -177,21 +184,21 @@ void Prediction::reEstimate()
 	}
 	
 	// re-estimate A
-	for(std::size_t i = 0; i < a.col(); ++i)
+	for(std::size_t i = 0; i < a.row(); ++i)
 	{
-		for(std::size_t j = 0; j < a.row(); ++j)
+		for(std::size_t j = 0; j < a.col(); ++j)
 		{	
 			numer = 0.0f;
 			denom = 0.0f;
 			for(std::size_t t = 0; t < (duck.GetSeqLength() - 1); ++t)
 			{
-				numer = numer + diGamma[t][j][i];
+				numer = numer + diGamma[t][i][j];
 				denom = denom + gamma[t][0][i];
 			}
 			a[i][j] = numer / denom;
 		}
 	}
-	
+
 	// re-estimate B
 	for(std::size_t i = 0; i < a.row(); ++i)
 	{
@@ -235,3 +242,21 @@ void Prediction::printDuckSequence() const
 		std::cout << "Seq : " << i << " V : " << duck.GetAction(i).GetVAction() << " H : " << duck.GetAction(i).GetHAction() << " M : " << duck.GetAction(i).GetMovement() << std::endl;
 	}
 }
+void Prediction::makePrediction()
+{
+	nextState = std::max_element(alpha[duck.GetSeqLength() -1][0].begin(), alpha[duck.GetSeqLength() -1][0].end()) - alpha[duck.GetSeqLength() -1][0].begin();
+	nextObservation = std::max_element(b[nextState].begin(), b[nextState].end()) - b[nextState].begin();
+	std::cout << "Next state : " << nextState << std::endl;
+	std::cout << "Next observation : " << nextObservation << std::endl;
+	
+	std::for_each(observation.begin(), observation.end(),[&, this](std::pair<const std::pair<ducks::EAction, ducks::EAction>, std::size_t> & pair)
+	{
+		if(pair.second == nextObservation)
+		{
+			nextV = pair.first.first;
+			nextH = pair.first.second;
+			return;
+		}
+	});	
+}
+
